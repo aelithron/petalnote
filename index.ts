@@ -54,8 +54,6 @@ client.on(Events.InteractionCreate, async interaction => {
   } else return;
 });
 
-
-
 export async function loadCommands(): Promise<Collection<string, Command>> {
   const commands: Collection<string, Command> = new Collection();
   const foldersPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'commands');
