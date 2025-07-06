@@ -36,23 +36,28 @@ client.on(Events.InteractionCreate, async interaction => {
         await interaction.reply({ content: 'there was an error while executing this command ;-;', flags: MessageFlags.Ephemeral });
       }
     }
-  } else if (interaction.isAutocomplete()) {
-    const command = (interaction.client as ClientWithCommands).commands.get(interaction.commandName);
-    if (!command) {
-      console.error(`[bot] no command matching ${interaction.commandName} was found!`);
-      return;
-    }
-    if (!command.autocomplete) {
-      console.error(`[bot] command ${interaction.commandName} does not have an autocomplete function!`);
-      return;
-    }
-    try {
-      await command.autocomplete(interaction);
-    } catch (error) {
-      console.error(`[bot] ${error}`);
-    }
+  } else if (interaction.isButton()) {
+    if (interaction.customId.startsWith("new-journal-write-")) {
+      const entryId = interaction.customId.split('new-journal-write-')[1];
+      console.log('Received entry ID:', entryId);
+    } else return;
+  } else if (interaction.isModalSubmit()) {
+
   } else return;
 });
+
+/*
+const enterIntoJournal = new ModalBuilder()
+  .setCustomId('new-journal')
+  .setTitle('Journal Entry');
+const journalInput = new TextInputBuilder()
+  .setCustomId('new-journal-text')
+  .setLabel("What would you like to write?")
+  .setStyle(TextInputStyle.Paragraph);
+const journalActionRow = new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(journalInput);
+enterIntoJournal.addComponents(journalActionRow);
+journalInteraction.showModal(enterIntoJournal);
+*/
 
 export async function loadCommands(): Promise<Collection<string, Command>> {
   const commands: Collection<string, Command> = new Collection();

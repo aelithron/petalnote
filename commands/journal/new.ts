@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, MessageFlags, ModalActionRowComponentBuilder, ModalBuilder, SlashCommandBuilder, Snowflake, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, MessageFlags, SlashCommandBuilder, Snowflake } from 'discord.js';
 import { JournalMood } from '../../petalnote';
 
 export const data = new SlashCommandBuilder()
@@ -58,40 +58,16 @@ export async function execute(interaction: CommandInteraction) {
         moodInteraction.update({ content: "error: i failed to select your mood! please try again or contact my operator!", components: [] });
         return;
     }
-    const yesJournal = new ButtonBuilder()
-      .setCustomId('new-yes-journal')
-      .setLabel('Yes')
-      .setStyle(ButtonStyle.Success);
-    const noJournal = new ButtonBuilder()
-      .setCustomId('new-no-journal')
-      .setLabel('No')
-      .setStyle(ButtonStyle.Danger);
+    
+    // break questions, go on to writing to db
+    const writeInJournal = new ButtonBuilder()
+      .setCustomId(`new-journal-write-${'(placeholder)'}`) // replace with the journal entry ID
+      .setLabel('Write')
+      .setEmoji('📝')
+      .setStyle(ButtonStyle.Primary);
     const journalRow = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(yesJournal, noJournal);
-    const askJournaling = await moodInteraction.update({ content: `**mood:** ${mood}\ngot it! would you like to write in your journal?`, components: [journalRow] });
-    const journalInteraction = await askJournaling.awaitMessageComponent({ filter: (i: { user: { id: Snowflake; }; }) => i.user.id === interaction.user.id, time: 60_000 });
-    if (!moodInteraction) {
-      console.warn("[bot] couldn't find/get journalInteraction callback!");
-      await interaction.editReply({ content: "error: i failed to get your journaling answer! please try again or contact my operator!", components: [] });
-      return;
-    }
-    let journalEntry: string | null = null
-    if (journalInteraction.customId === "new-yes-journal") {
-      const enterIntoJournal = new ModalBuilder()
-        .setCustomId('new-journal')
-        .setTitle('Journal Entry');
-      const journalInput = new TextInputBuilder()
-        .setCustomId('new-journal-text')
-        .setLabel("What would you like to write?")
-        .setStyle(TextInputStyle.Paragraph);
-      const journalActionRow = new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(journalInput);
-      enterIntoJournal.addComponents(journalActionRow);
-      journalInteraction.showModal(enterIntoJournal);
-      // still need to capture the modal interaction properly
-      await interaction.editReply({ content: `**mood:** ${mood}\n**journal:** *Text box opened*\nthanks, i added this to your journal!`, components: [] });
-    } else {
-      await journalInteraction.update({ content: `**mood:** ${mood}\n**journal:** *No journal entry*\nthanks, i added this to your journal!`, components: [] });
-    }
+      .addComponents(writeInJournal);
+    await moodInteraction.update({ content: `**mood:** ${mood}\ngot it! your entry has been added!`, components: [journalRow] });
   } catch {
     await interaction.editReply({ content: "you didn't select something within a minute, so i fell asleep! run `/new` to restart!", components: [] });
   }

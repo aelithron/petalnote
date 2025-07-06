@@ -1,4 +1,5 @@
 import { Snowflake } from 'discord.js';
+import { ObjectId } from 'mongodb';
 
 export type ClientWithCommands = import('discord.js').Client & {
   commands: import('discord.js').Collection<string, Command>;
@@ -14,6 +15,7 @@ export type UserJournal = {
   entries: JournalEntry[]
 }
 export type JournalEntry = {
+  _id: ObjectId,
   mood: JournalMood
   text: string
   createdAt: Date
