@@ -14,7 +14,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] }) as ClientWith
 client.commands = await loadCommands();
 client.once(Events.ClientReady, readyClient => {
   if (process.argv.includes('--reload-cmds')) import('./deploycmds.ts');
-  client.user?.setActivity(`your thoughts`, { type: ActivityType.Listening });
+  client.user?.setActivity(`your thoughts and dreams <3`, { type: ActivityType.Listening });
   console.log(`[bot] ready (as: ${readyClient.user.tag}) :3`);
 });
 client.login(process.env.BOT_TOKEN);
@@ -53,6 +53,8 @@ client.on(Events.InteractionCreate, async interaction => {
     }
   } else return;
 });
+
+
 
 export async function loadCommands(): Promise<Collection<string, Command>> {
   const commands: Collection<string, Command> = new Collection();
