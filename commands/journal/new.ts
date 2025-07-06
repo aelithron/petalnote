@@ -10,22 +10,27 @@ export async function execute(interaction: CommandInteraction) {
   const veryHappy = new ButtonBuilder()
     .setCustomId('new-veryHappy')
     .setLabel('Very Happy')
+    .setEmoji('😄')
     .setStyle(ButtonStyle.Success);
   const happy = new ButtonBuilder()
     .setCustomId('new-happy')
     .setLabel('Happy')
+    .setEmoji('🙂')
     .setStyle(ButtonStyle.Success);
   const neutral = new ButtonBuilder()
     .setCustomId('new-neutral')
     .setLabel('Neutral')
+    .setEmoji('😐')
     .setStyle(ButtonStyle.Secondary);
   const sad = new ButtonBuilder()
     .setCustomId('new-sad')
     .setLabel('Sad')
+    .setEmoji('🙁')
     .setStyle(ButtonStyle.Danger);
   const verySad = new ButtonBuilder()
     .setCustomId('new-verySad')
     .setLabel('Very Sad')
+    .setEmoji('😢')
     .setStyle(ButtonStyle.Danger);
   const moodRow = new ActionRowBuilder<ButtonBuilder>()
     .addComponents(veryHappy, happy, neutral, sad, verySad);
@@ -95,8 +100,7 @@ export async function execute(interaction: CommandInteraction) {
     const journalRow = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(writeInJournal);
     await moodInteraction.update({ content: `**mood:** ${mood}\ngot it! your entry has been added!`, components: [journalRow] });
-  } catch (e) {
-    console.log(e)
+  } catch {
     await interaction.editReply({ content: "you didn't select something within a minute, so i fell asleep! run `/new` to restart!", components: [] });
   }
 };
