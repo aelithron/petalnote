@@ -11,13 +11,14 @@ export type Command = {
 }
 
 export type UserJournal = {
-  _id: Snowflake
+  _id: ObjectId
+  userID: Snowflake
   entries: JournalEntry[]
 }
 export type JournalEntry = {
   _id: ObjectId,
   mood: JournalMood
-  text: string
+  text: string | null
   createdAt: Date
 }
 export type JournalMood = 'Very Happy' | 'Happy' | 'Neutral' | 'Sad' | 'Very Sad'

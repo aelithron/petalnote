@@ -1,5 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CommandInteraction, MessageFlags, SlashCommandBuilder, Snowflake } from 'discord.js';
-import { JournalMood } from '../../petalnote';
+import { JournalEntry, JournalMood, UserJournal } from '../../petalnote';
+import { ObjectId } from 'mongodb';
+import userCollection from '../../utils/db';
 
 export const data = new SlashCommandBuilder()
   .setName('new')
@@ -58,17 +60,43 @@ export async function execute(interaction: CommandInteraction) {
         moodInteraction.update({ content: "error: i failed to select your mood! please try again or contact my operator!", components: [] });
         return;
     }
-    
+
     // break questions, go on to writing to db
+    const entryID = new ObjectId();
+    let userDoc = await userCollection.findOne({ userID: interaction.user.id });
+    if (!userDoc) {
+      userDoc = {
+        _id: new ObjectId(),
+        userID: interaction.user.id,
+        entries: []
+      } as UserJournal;
+      await userCollection.insertOne(userDoc);
+    }
+    const entries: JournalEntry[] = userDoc.entries;
+    entries.push({
+      _id: entryID,
+      createdAt: new Date(),
+      mood: mood,
+      text: null
+    })
+    await userCollection.updateOne(
+      { _id: userDoc._id },
+      {
+        $set: {
+          entries: entries
+        },
+      },
+    );
     const writeInJournal = new ButtonBuilder()
-      .setCustomId(`new-journal-write-${'(placeholder)'}`) // replace with the journal entry ID
+      .setCustomId(`new-journal-write-${entryID.toString()}`)
       .setLabel('Write')
       .setEmoji('📝')
       .setStyle(ButtonStyle.Primary);
     const journalRow = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(writeInJournal);
     await moodInteraction.update({ content: `**mood:** ${mood}\ngot it! your entry has been added!`, components: [journalRow] });
-  } catch {
+  } catch (e) {
+    console.log(e)
     await interaction.editReply({ content: "you didn't select something within a minute, so i fell asleep! run `/new` to restart!", components: [] });
   }
 };
