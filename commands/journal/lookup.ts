@@ -21,10 +21,11 @@ export async function execute(interaction: CommandInteraction) {
       entries: []
     } as UserJournal;
     await userCollection.insertOne(userDoc);
-  }
+  };
   if (userDoc.entries.length === 0) {
-    await interaction.reply("you don't have any journal entries!");
+    await interaction.editReply("you don't have any journal entries!");
     return;
-  }
-  await interaction.reply("under development!");
+  };
+  
+  await interaction.editReply({ content: 'under development!' });
 };

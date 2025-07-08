@@ -93,7 +93,7 @@ export async function execute(interaction: CommandInteraction) {
       },
     );
     const writeInJournal = new ButtonBuilder()
-      .setCustomId(`new-journal-write-${entryID.toString()}`)
+      .setCustomId(`journal-write-${entryID.toString()}`)
       .setLabel('Write')
       .setEmoji('📝')
       .setStyle(ButtonStyle.Primary);

@@ -13,6 +13,8 @@ export type Command = {
 export type UserJournal = {
   _id: ObjectId
   userID: Snowflake
+  //doReminders: boolean
+  //reminderTime: Date
   entries: JournalEntry[]
 }
 export type JournalEntry = {
