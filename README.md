@@ -1,5 +1,5 @@
 # PetalNote
-A simple Discord journaling app themed around flowers :3
+A simple Discord journaling app themed around flowers :3 \
 Bot built for Hack Club's [Converge](https://converge.hackclub.com)!
 
 ## Sources Used
