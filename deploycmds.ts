@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import dotenv from 'dotenv';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const token = process.env.BOT_TOKEN;
 const clientId = process.env.CLIENT_ID;
