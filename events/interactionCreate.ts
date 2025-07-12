@@ -1,7 +1,8 @@
-import { ActionRowBuilder, Events, Interaction, MessageFlags, ModalActionRowComponentBuilder, ModalBuilder, ModalMessageModalSubmitInteraction, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonInteraction, Events, Interaction, MessageFlags, ModalActionRowComponentBuilder, ModalBuilder, ModalMessageModalSubmitInteraction, TextInputBuilder, TextInputStyle } from 'discord.js';
 import userCollection from '../utils/db';
 import { ClientWithCommands, JournalEntry, UserJournal } from '../petalnote';
 import { ObjectId } from 'mongodb';
+import { loadEntryPage } from '../commands/journal/entries';
 
 export const name = Events.InteractionCreate;
 export async function execute(interaction: Interaction) {
@@ -49,6 +50,24 @@ export async function execute(interaction: Interaction) {
       const journalActionRow = new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(journalInput);
       enterIntoJournal.addComponents(journalActionRow);
       interaction.showModal(enterIntoJournal);
+    } else if (interaction.customId.startsWith("lookup-previous-")) {
+      const newPage = Number.parseInt(interaction.customId.split('lookup-previous-')[1]) - 1;
+      if (!newPage || Number.isNaN(newPage)) {
+        interaction.reply({ content: 'there was an error!' });
+        console.error('[bot] error handling navigation in "/entries"! number for previous page was not a number!');
+        return;
+      }
+      const pageEmbed = await loadEntryPage(newPage, interaction.user.id);
+      (interaction as ButtonInteraction).update(pageEmbed);
+    } else if (interaction.customId.startsWith("lookup-next-")) {
+      const newPage = Number.parseInt(interaction.customId.split('lookup-next-')[1]) + 1;
+      if (!newPage || Number.isNaN(newPage)) {
+        interaction.reply({ content: 'there was an error!' });
+        console.error('[bot] error handling navigation in "/entries"! number for next page was not a number!');
+        return;
+      }
+      const pageEmbed = await loadEntryPage(newPage, interaction.user.id);
+      (interaction as ButtonInteraction).update(pageEmbed);
     } else return;
   } else if (interaction.isModalSubmit()) {
     if (interaction.customId.startsWith("journal-modal-")) {

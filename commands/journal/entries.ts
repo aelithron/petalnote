@@ -1,11 +1,11 @@
-import { ActionRowBuilder, APIEmbedField, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, MessageFlags, RestOrArray, SlashCommandBuilder } from "discord.js";
+import { ActionRowBuilder, APIEmbedField, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, InteractionEditReplyOptions, MessageFlags, MessagePayload, RestOrArray, SlashCommandBuilder, Snowflake } from "discord.js";
 import userCollection from "../../utils/db";
 import { ObjectId } from "mongodb";
 import { JournalEntry, UserJournal } from "../../petalnote";
 
 export const data = new SlashCommandBuilder()
-  .setName('lookup')
-  .setDescription('look up a journal entry')
+  .setName('entries')
+  .setDescription('see all of your journal entries')
   .addIntegerOption(option =>
     option.setName('page')
       .setDescription('the page to use, defaults to 1')
@@ -15,30 +15,36 @@ export const data = new SlashCommandBuilder()
 //    .setDescription('date when the entries were added'));
 export async function execute(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply({ flags: MessageFlags.Ephemeral })
-  let userDoc = await userCollection.findOne({ userID: interaction.user.id }) as UserJournal;
+
+  // TODO: Add filtering logic based on command options
+
+  const currentPage = interaction.options.getInteger('page') || 1;
+  const entriesEmbed = await loadEntryPage(currentPage, interaction.user.id);
+  await interaction.editReply(entriesEmbed);
+};
+
+// a little note: I moved this code out here because it needs to always act the same.
+// I have to call this in interactionCreate.ts to allow for navigation.
+// thus why most of the command is in another function. - nova
+export async function loadEntryPage(page: number, userID: Snowflake): Promise<InteractionEditReplyOptions> {
+  let userDoc = await userCollection.findOne({ userID: userID }) as UserJournal;
   if (!userDoc) {
     userDoc = {
       _id: new ObjectId(),
-      userID: interaction.user.id,
+      userID: userID,
       entries: []
     } as UserJournal;
     await userCollection.insertOne(userDoc);
   };
   if (userDoc.entries.length === 0) {
-    await interaction.editReply("you don't have any journal entries!");
-    return;
+    return { content: 'you don\'t have any journal entries!' };
   };
-
-  // TODO: Add filtering logic based on command options
-
   const embed = new EmbedBuilder()
     .setColor(0x7932a8)
     .setTitle(`Journal Entries`);
-  const currentPage = interaction.options.getInteger('page') || 1;
-  const entries = await entriesPerPage(userDoc.entries.reverse(), currentPage);
+  const entries = await entriesPerPage(userDoc.entries.reverse(), page);
   if (entries.length === 0) {
-    interaction.editReply({ content: `there are no entries on page ${currentPage}!` });
-    return;
+    return { content: `there are no entries on page ${page}!` };
   }
   const fields: RestOrArray<APIEmbedField> = [];
   for (const pagedEntry of entries) {
@@ -49,20 +55,19 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   // note: this won't account for filtering logic the way it is!
   const previousPage = new ButtonBuilder()
-    .setCustomId(`lookup-previous-${currentPage}`)
+    .setCustomId(`lookup-previous-${page}`)
     .setEmoji('⬅️')
     .setStyle(ButtonStyle.Primary);
   const nextPage = new ButtonBuilder()
-    .setCustomId(`lookup-next-${currentPage}`)
+    .setCustomId(`lookup-next-${page}`)
     .setEmoji('➡️')
     .setStyle(ButtonStyle.Primary);
-  if (currentPage <= 1) previousPage.setDisabled(true);
-  if (currentPage * 5 >= userDoc.entries.length) nextPage.setDisabled(true);
+  if (page <= 1) previousPage.setDisabled(true);
+  if (page * 5 >= userDoc.entries.length) nextPage.setDisabled(true);
   const navigationRow = new ActionRowBuilder<ButtonBuilder>()
     .addComponents(previousPage, nextPage);
-
-  await interaction.editReply({ embeds: [embed], components: [navigationRow] });
-};
+  return { embeds: [embed], components: [navigationRow] };
+}
 
 type PagedEntry = { number: number, entry: JournalEntry }
 async function entriesPerPage(entries: JournalEntry[], page: number): Promise<PagedEntry[]> {
@@ -76,7 +81,6 @@ async function entriesPerPage(entries: JournalEntry[], page: number): Promise<Pa
   }
   return items;
 }
-
 function truncate(text: string): string {
   const maxLength = 100
   if (!text) return '';
