@@ -23,7 +23,7 @@ Make sure you clone the source code and run `npm install`. However, you also nee
 Simply run `npm install --global typescript tsx`. This may require sudo/root access.
 
 Next, add your environment variables. Get your Discord bot token and application ID (a guide to making a Discord application is [here](https://discordjs.guide/preparations/setting-up-a-bot-application.html#creating-your-bot)). Add these as `BOT_TOKEN` and `CLIENT_ID`.\
-You will also need a MongoDB database. Add a connection string to your DB server as `MONGODB_URI`, and a database for storing the app's data as `MONGODB_DB`.
+You will also need a MongoDB database. Add a connection string to your DB server as `MONGODB_URI`, and a database for storing the app's data as `MONGODB_DB`. Make sure the MONGODB_DB database has a collection called `users`.
 
 Finally, just run the command `tsx index.ts --reload-cmds` in the main code directory. Adding `--reload-cmds` means you don't have to run the script to deploy commands, which decreases the chances of breaking the bot. However, you may want to remove it in a development environment, thus why it's a flag.
 #### A note on Docker

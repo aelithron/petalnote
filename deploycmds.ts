@@ -40,7 +40,6 @@ const rest = new REST().setToken(token);
 		);
 
 		console.log(`[cmd-deploy] successfully reloaded ${(data as any).length} application (/) commands :D`);
-		process.exit(0);
 	} catch (error) {
 		console.error("[cmd-deploy]", error);
 	}
