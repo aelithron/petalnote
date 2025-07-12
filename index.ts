@@ -5,7 +5,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-dotenv.config({ quiet: false });
+dotenv.config({ quiet: true });
 if (!process.env.BOT_TOKEN) {
   console.error("[bot] missing BOT_TOKEN in your environment variables!");
   process.exit(1);

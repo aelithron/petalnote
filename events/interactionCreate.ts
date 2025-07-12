@@ -1,8 +1,8 @@
-import { ActionRowBuilder, ButtonInteraction, Events, Interaction, MessageFlags, ModalActionRowComponentBuilder, ModalBuilder, ModalMessageModalSubmitInteraction, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, AttachmentBuilder, ButtonInteraction, Events, Interaction, MessageFlags, ModalActionRowComponentBuilder, ModalBuilder, ModalMessageModalSubmitInteraction, TextInputBuilder, TextInputStyle } from 'discord.js';
 import userCollection from '../utils/db';
 import { ClientWithCommands, JournalEntry, UserJournal } from '../petalnote';
 import { ObjectId } from 'mongodb';
-import { loadEntryPage } from '../commands/journal/entries';
+import { loadEntryPage, truncate } from '../commands/journal/entries';
 import { loadSingleEntry } from '../commands/journal/open';
 
 export const name = Events.InteractionCreate;
@@ -24,6 +24,7 @@ export async function execute(interaction: Interaction) {
       }
     }
   } else if (interaction.isButton()) {
+    // please don't laugh at the button if-else tree, it wasn't supposed to get this bad ;-;
     if (interaction.customId.startsWith("journal-write-")) {
       const entryId = interaction.customId.split('journal-write-')[1];
       let userDoc = await userCollection.findOne({ userID: interaction.user.id });
@@ -46,7 +47,7 @@ export async function execute(interaction: Interaction) {
         .setLabel("What would you like to write?")
         .setStyle(TextInputStyle.Paragraph);
       if (entries[entryIndex].text != null) {
-        journalInput.setPlaceholder(entries[entryIndex].text);
+        journalInput.setPlaceholder(truncate(entries[entryIndex].text));
       };
       const journalActionRow = new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(journalInput);
       enterIntoJournal.addComponents(journalActionRow);
@@ -101,6 +102,27 @@ export async function execute(interaction: Interaction) {
         { $set: { entries: userDoc.entries } }
       );
       await interaction.update({ content: 'entry deleted successfully!', components: [], embeds: [] });
+    } else if (interaction.customId.startsWith("export-entry-")) {
+      const entryID = new ObjectId(interaction.customId.split('export-entry-')[1]);
+      if (!entryID) {
+        await interaction.reply({ content: 'that entry doesn\'t exist!' });
+        return;
+      }
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+      let userDoc = await userCollection.findOne({ userID: interaction.user.id }) as UserJournal;
+      if (!userDoc) {
+        userDoc = {
+          _id: new ObjectId(),
+          userID: interaction.user.id,
+          entries: []
+        } as UserJournal;
+        await userCollection.insertOne(userDoc);
+      };
+      const entry = userDoc.entries.find(e => e._id.equals(entryID));
+      if (!entry) return { content: 'that entry doesn\'t exist!' }
+      const fileContent = `Journal Entry ${entry.createdAt}\nMood: ${entry.mood}\n\nJournal:\n${entry.text ? entry.text : 'No text entered'}\n\n(dev - entry id ${entry._id})`;
+      const attachment = new AttachmentBuilder(Buffer.from(fileContent, 'utf-8'), { name: `entry-${entry.createdAt.toISOString().replaceAll(':', '-')}.txt` });
+      await interaction.editReply({ content: 'exported successfully!', files: [attachment] });
     } else return;
   } else if (interaction.isModalSubmit()) {
     if (interaction.customId.startsWith("journal-modal-")) {

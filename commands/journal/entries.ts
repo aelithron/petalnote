@@ -89,8 +89,8 @@ async function entriesPerPage(entries: JournalEntry[], page: number): Promise<Pa
   }
   return items;
 }
-function truncate(text: string): string {
-  const maxLength = 100
+export function truncate(text: string): string {
+  const maxLength = 95
   if (!text) return '';
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength) + '...';
