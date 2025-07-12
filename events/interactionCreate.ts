@@ -3,6 +3,7 @@ import userCollection from '../utils/db';
 import { ClientWithCommands, JournalEntry, UserJournal } from '../petalnote';
 import { ObjectId } from 'mongodb';
 import { loadEntryPage } from '../commands/journal/entries';
+import { loadSingleEntry } from '../commands/journal/open';
 
 export const name = Events.InteractionCreate;
 export async function execute(interaction: Interaction) {
@@ -53,21 +54,53 @@ export async function execute(interaction: Interaction) {
     } else if (interaction.customId.startsWith("lookup-previous-")) {
       const newPage = Number.parseInt(interaction.customId.split('lookup-previous-')[1]) - 1;
       if (!newPage || Number.isNaN(newPage)) {
-        interaction.reply({ content: 'there was an error!' });
+        await interaction.reply({ content: 'there was an error!' });
         console.error('[bot] error handling navigation in "/entries"! number for previous page was not a number!');
         return;
       }
       const pageEmbed = await loadEntryPage(newPage, interaction.user.id);
-      (interaction as ButtonInteraction).update(pageEmbed);
+      await (interaction as ButtonInteraction).update(pageEmbed);
     } else if (interaction.customId.startsWith("lookup-next-")) {
       const newPage = Number.parseInt(interaction.customId.split('lookup-next-')[1]) + 1;
       if (!newPage || Number.isNaN(newPage)) {
-        interaction.reply({ content: 'there was an error!' });
+        await interaction.reply({ content: 'there was an error!' });
         console.error('[bot] error handling navigation in "/entries"! number for next page was not a number!');
         return;
       }
       const pageEmbed = await loadEntryPage(newPage, interaction.user.id);
-      (interaction as ButtonInteraction).update(pageEmbed);
+      await (interaction as ButtonInteraction).update(pageEmbed);
+    } else if (interaction.customId.startsWith("open-entry-")) {
+      const entryID = new ObjectId(interaction.customId.split('open-entry-')[1]);
+      if (!entryID) {
+        await interaction.reply({ content: 'that entry doesn\'t exist!' });
+        return;
+      }
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+      const pageEmbed = await loadSingleEntry(entryID, interaction.user.id);
+      await interaction.editReply(pageEmbed);
+    } else if (interaction.customId.startsWith("delete-entry-")) {
+      const entryID = new ObjectId(interaction.customId.split('delete-entry-')[1]);
+      if (!entryID) {
+        await interaction.reply({ content: 'that entry doesn\'t exist!' });
+        return;
+      }
+      let userDoc = await userCollection.findOne({ userID: interaction.user.id }) as UserJournal;
+      if (!userDoc) {
+        userDoc = {
+          _id: new ObjectId(),
+          userID: interaction.user.id,
+          entries: []
+        } as UserJournal;
+        await userCollection.insertOne(userDoc);
+      };
+      const entry = userDoc.entries.find(e => e._id.equals(entryID));
+      if (!entry) return { content: 'that entry doesn\'t exist!' }
+      userDoc.entries = userDoc.entries.filter(e => !e._id.equals(entryID));
+      await userCollection.updateOne(
+        { userID: interaction.user.id },
+        { $set: { entries: userDoc.entries } }
+      );
+      await interaction.update({ content: 'entry deleted successfully!', components: [], embeds: [] });
     } else return;
   } else if (interaction.isModalSubmit()) {
     if (interaction.customId.startsWith("journal-modal-")) {

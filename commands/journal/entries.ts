@@ -46,10 +46,16 @@ export async function loadEntryPage(page: number, userID: Snowflake): Promise<In
   if (entries.length === 0) {
     return { content: `there are no entries on page ${page}!` };
   }
+  const entryButtons: ButtonBuilder[] = [];
   const fields: RestOrArray<APIEmbedField> = [];
   for (const pagedEntry of entries) {
     const entry = pagedEntry.entry;
     fields.push({ name: `${pagedEntry.number} - <t:${Math.floor(entry.createdAt.getTime() / 1000)}>`, value: `**Mood:** ${entry.mood}\n${entry.text ? truncate(entry.text) : '*No text entered*'}` });
+    entryButtons.push(new ButtonBuilder()
+      .setCustomId(`open-entry-${entry._id}`)
+      .setLabel(`${pagedEntry.number}`)
+      .setStyle(ButtonStyle.Secondary)
+    );
   }
   embed.addFields(fields);
 
@@ -66,7 +72,9 @@ export async function loadEntryPage(page: number, userID: Snowflake): Promise<In
   if (page * 5 >= userDoc.entries.length) nextPage.setDisabled(true);
   const navigationRow = new ActionRowBuilder<ButtonBuilder>()
     .addComponents(previousPage, nextPage);
-  return { embeds: [embed], components: [navigationRow] };
+  const entryOpenRow = new ActionRowBuilder<ButtonBuilder>()
+    .addComponents(...entryButtons);
+  return { embeds: [embed], components: [entryOpenRow, navigationRow] };
 }
 
 type PagedEntry = { number: number, entry: JournalEntry }
